@@ -1,0 +1,117 @@
+<?php
+//inicializando conexão com o banco de dados local
+$strcon = mysqli_connect('localhost','tarik','123','banco_smarkio');
+
+if(!$strcon){//caso falhe a conexão
+	echo "Falha ao conectar com o banco";
+}else{//conexão bem sucedida
+	
+	
+	// dadosXls irá armazenar toda a tabela
+	$dadosXls  = "";
+	$dadosXls .= "<table border=1>";
+	$dadosXls .= "<tr>";
+	$dadosXls .= "<th> ID </th>";
+	$dadosXls .= "<th> DATA_ACESSO </th>";
+	$dadosXls .= "<th> ACESSOS </th>";
+	$dadosXls .= "<th> MENU </th>";
+	$dadosXls .= "<th> BOLETO_GERADO </th>";
+	$dadosXls .= "<th> SATISFACAO </th>";
+	$dadosXls .= "<th> COMENTÁRIOS </th>";
+	
+	//faz a consulta no banco de dados
+	$sql = "select * from tabela_base";
+	$resultado = mysqli_query($strcon, $sql) or dir("Erro no acesso");
+	
+	//variaveis que irão armazenar os KPI's
+	$soma_satisfacao = 0;
+	$soma_satisfacao_1 =0;
+	$soma_satisfacao_2 =0;
+	$contador_satiscao =0;
+	$contador_satiscao_1 =0;
+	$contador_satiscao_2 =0;
+	$soma_acesso =0;
+	$soma_acesso_1 =0;
+	$soma_acesso_2 =0;
+	$contador_acesso =0;
+	$contador_acesso_1 =0;
+	$contador_acesso_2 =0;
+	
+	//Loop percorrendo o resultando da consulta SQL
+	while($registro = mysqli_fetch_array($resultado)){
+		$id = $registro['id'];
+		$data_acesso = $registro['data_acesso'];
+		$acessos = $registro['acessos'];
+		$menu = $registro['menu'];
+		$boleto_gerado = $registro['boleto_gerado'];
+		$satisfacao = $registro['satisfacao'];
+		$comentario = $registro['comentario'];
+		$dadosXls .= "<tr>";
+		$dadosXls .= "<td>".$id."</td>";
+		$dadosXls .= "<td>".$data_acesso."</td>";
+		$dadosXls .= "<td>".$acessos."</td>";
+		$dadosXls .= "<td>".$menu."</td>";
+		$dadosXls .= "<td>".$boleto_gerado."</td>";
+		$dadosXls .= "<td>".$satisfacao."</td>";
+		$dadosXls .= "<td>".$comentario."</td>";
+		if($satisfacao != null) {
+			$soma_satisfacao += $satisfacao;
+			$contador_satiscao +=1;
+			if($menu == "segunda via de fatura"){
+				$soma_satisfacao_1 += $satisfacao;
+				$contador_satiscao_1 +=1;
+			}else{
+				$soma_satisfacao_2 += $satisfacao;
+				$contador_satiscao_2 +=1;
+			}
+		}
+		if($acessos != 0) {
+			$contador_acesso +=1;
+			if($menu == "segunda via de fatura"){
+				$contador_acesso_1 +=1;
+			}else{
+				$contador_acesso_2 +=1;
+			}
+		}
+	}
+	//fechamento da conexão com o banco de dados
+	mysqli_close($strcon);
+
+	//Calculo de alguns KPI's
+	$resultado_satisfacao = $soma_satisfacao/$contador_satiscao;
+	$resultado_satisfacao_1 = $soma_satisfacao_1/$contador_satiscao_1;
+	$resultado_satisfacao_2 = $soma_satisfacao_2/$contador_satiscao_2;
+	
+	//configuração para exportar em excel
+	//Caso não quiser exportar, apenas exibir a tabela no localhost, comentar as proximas 4 linhas
+	$arquivo = "MinhaPlanilha.xls";  	
+    header('Content-Type: application/vnd.ms-excel');
+    header('Content-Disposition: attachment;filename="'.$arquivo.'"');
+    header('Cache-Control: max-age=0');
+	
+	//tabela com os KPI's
+	$dadosXls .= "</table>";
+	$dadosXls .= "<th>";
+	$dadosXls .= "<table border=1>";
+	$dadosXls .= "<tr>";
+	$dadosXls .= "<th> MEDIA DE SATISFACAO GERAL</th>";
+	$dadosXls .= "<th> MEDIA DE SATISFACAO MENU 1 </th>";
+	$dadosXls .= "<th> MEDIA DE SATISFACAO MENU 2 </th>";
+	$dadosXls .= "<th> NUMERO DE ACESSOS GERAL </th>";
+	$dadosXls .= "<th> NUMERO DE ACESSOS MENU 1 </th>";
+	$dadosXls .= "<th> NUMERO DE ACESSOS MENU 2 </th>";
+	$dadosXls .= "<tr>";
+	$dadosXls .= "<th> $resultado_satisfacao </th>";
+	$dadosXls .= "<th> $resultado_satisfacao_1 </th>";
+	$dadosXls .= "<th> $resultado_satisfacao_2 </th>";
+	$dadosXls .= "<th> $contador_acesso </th>";
+	$dadosXls .= "<th> $contador_acesso_1 </th>";
+	$dadosXls .= "<th> $contador_acesso_2 </th>";
+	$dadosXls .= "</table>";
+	
+	//executa a tabela(exportar/printar)
+	echo "$dadosXls";
+	
+	
+}
+?>
